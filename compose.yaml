@@ -1,17 +1,19 @@
 services:
   gitea:
     image: docker.gitea.com/gitea:1.25.1
-    container_name: gitea
+    container_name: git.sirius.local
     environment:
       USER_UID: 1000
       USER_GID: 1000
     restart: always
+    networks:
+      - gitea
     volumes:
       - ./.data/gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://gitea:3000" ]
+      test: [ "CMD", "curl", "-f", "http://git.sirius.local:3000" ]
       interval: 10s
       retries: 3
       start_period: 30s
@@ -25,14 +27,21 @@ services:
     container_name: runner
     environment:
       CONFIG_FILE: /config.yaml
-      GITEA_INSTANCE_URL: "http://host.docker.internal:3000"
+      GITEA_INSTANCE_URL: "http://git.sirius.local:3000"
       GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_REGISTRATION_TOKEN}
       GITEA_RUNNER_NAME: "runner"
     depends_on:
       gitea:
         condition: service_healthy
         restart: true
+    networks:
+      - gitea
     volumes:
       - ./configs/runner.yaml:/config.yaml
       - ./.data/runner:/data
       - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  gitea:
+    external: false
+    name: gitea
